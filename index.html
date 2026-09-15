@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بورس‌کالک | ردیاب معاملات بورسی</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── Header ── -->
+  <header class="header">
+    <div class="header-brand">
+      <h1>📈 بورس‌کالک</h1>
+      <span class="tagline">ردیاب معاملات بورسی</span>
+    </div>
+    <div class="header-controls">
+      <div class="account-select-wrapper">
+        <label>حساب:</label>
+        <select id="accountSelect" onchange="switchAccount(this.value)">
+          <option value="">انتخاب حساب...</option>
+        </select>
+      </div>
+      <button class="btn btn-secondary" onclick="createAccount()">＋ حساب جدید</button>
+      <button class="btn btn-secondary" onclick="deleteCurrentAccount()" title="حذف حساب فعلی">🗑</button>
+      <button class="btn btn-secondary" onclick="exportBackup()" title="ذخیره فایل پشتیبان">💾 پشتیبان‌گیری</button>
+      <label class="btn btn-secondary" style="cursor:pointer" title="بازیابی از فایل پشتیبان">
+        📂 بازیابی
+        <input type="file" accept=".json" onchange="importBackup(event)" style="display:none">
+      </label>
+    </div>
+  </header>
+
+  <!-- ── Body ── -->
+  <div class="app-body">
+
+    <!-- Sidebar: Stock list -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h3>📋 سهام‌ها</h3>
+        <button id="addStockBtn" class="btn btn-success btn-sm" onclick="createStock()" disabled>
+          ＋ سهام جدید
+        </button>
+      </div>
+      <div id="stockList" class="stock-list">
+        <div class="empty-state">ابتدا یک حساب انتخاب کنید</div>
+      </div>
+    </aside>
+
+    <!-- Main: Stock detail -->
+    <main class="main-content">
+      <div id="stockDetail">
+        <div class="welcome-screen">
+          <div class="welcome-icon">📊</div>
+          <h2>به بورس‌کالک خوش آمدید</h2>
+          <p>یک حساب ایجاد کنید و معاملات بورسی خود را ثبت و پیگیری کنید</p>
+        </div>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<!-- ── Modal ── -->
+<div id="modalOverlay" class="modal-overlay" style="display:none"
+     onclick="if(event.target===this)hideModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="modalTitle">تأیید</h3>
+    <p id="modalMessage"></p>
+    <div class="modal-footer" id="modalFooter">
+      <button class="btn btn-ghost" onclick="hideModal()">بستن</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/jalali.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
