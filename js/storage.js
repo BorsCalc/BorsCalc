@@ -38,7 +38,7 @@ const storage = {
   exportToFile(data) {
     const payload = {
       version: '1.0',
-      description: 'فایل پشتیبان بورس‌کالک - برای بازیابی از طریق دکمه بازیابی استفاده کنید',
+      description: 'فایل پشتیبان بورس‌کلک - برای بازیابی از طریق دکمه بازیابی استفاده کنید',
       exportDate: new Date().toISOString(),
       accounts: data.accounts,
       stocks: data.stocks,

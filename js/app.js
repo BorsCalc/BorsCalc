@@ -740,7 +740,7 @@ function showWelcomeScreen() {
   }
   const detail = document.getElementById('stockDetail'); if (!detail) return;
   detail.innerHTML=`<div class="welcome-screen"><div class="welcome-icon">📊</div>
-    <h2>به بورس‌کالک خوش آمدید</h2>
+    <h2>به بورس‌کلک خوش آمدید</h2>
     <p>${state.currentAccountId?'از دکمه ＋ سهام جدید اضافه کنید':'ابتدا یک حساب ایجاد یا انتخاب کنید'}</p></div>`;
 }
 
