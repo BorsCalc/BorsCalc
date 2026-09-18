@@ -422,6 +422,7 @@ function calculateSummary(stockId) {
   const realizedProfit      = totalSellAmount - costOfSold;
   const remainingQty        = totalBuyQty - totalSellQty;
   const remainingInvestment = avgBuyPrice * remainingQty;
+  const netDeployed         = totalBuyAmount - totalSellAmount;
   const stock               = state.data.stocks.find(s=>s.id===stockId);
   const realTimePrice       = stock ? (parseFloat(stock.realTimePrice)||0) : 0;
   const hasRT               = realTimePrice>0 && remainingQty>0;
@@ -465,7 +466,7 @@ function calculateSummary(stockId) {
 
   return {
     totalBuyQty,totalBuyAmount,avgBuyPrice,totalSellQty,totalSellAmount,
-    remainingQty,remainingInvestment,realizedProfit,costOfSold,
+    remainingQty,remainingInvestment,netDeployed,realizedProfit,costOfSold,
     realTimePrice,currentValue,unrealizedPnl,totalPnl,
     bonus,rights,totalRealizedProfit
   };
@@ -564,13 +565,14 @@ function updatePortfolioTotals() {
   const sums   = stocks.map(s=>({stock:s,sum:calculateSummary(s.id)}));
   const active = sums.filter(r=>!r.stock.finalized);
   const totalInvested      = active.reduce((a,r)=>a+r.sum.remainingInvestment,0);
+  const totalNetDeployed   = active.reduce((a,r)=>a+r.sum.netDeployed,0);
   const totalCurrentValue  = active.reduce((a,r)=>a+(r.sum.currentValue||0),0);
   const totalUnrealizedPnl = active.reduce((a,r)=>a+(r.sum.unrealizedPnl||0),0);
   const totalRealizedPnl   = sums.reduce((a,r)=>a+r.sum.totalRealizedProfit,0);
   const hasRealTime        = active.some(r=>r.sum.realTimePrice>0&&r.sum.remainingQty>0);
   const set    = (id,text)=>{const el=document.getElementById(id);if(el)el.textContent=text;};
   const setCls = (id,cls) =>{const el=document.getElementById(id);if(el)el.className=cls;};
-  set('pf-total-invested',fmtNum(totalInvested));
+  set('pf-total-invested',fmtNum(totalNetDeployed));
   set('pf-total-cv',hasRealTime?fmtNum(totalCurrentValue):'—');
   set('pf-total-rpnl',fmtNum(totalRealizedPnl));
   setCls('pf-total-rpnl',`number-col ${totalRealizedPnl>=0?'pnl-pos':'pnl-neg'}`);
@@ -611,6 +613,7 @@ function renderPortfolioDashboard() {
   const active   = rows.filter(r=>!r.stock.finalized);
   const finalized= rows.filter(r=>r.stock.finalized);
   const totalInvested      = active.reduce((a,r)=>a+r.sum.remainingInvestment,0);
+  const totalNetDeployed   = active.reduce((a,r)=>a+r.sum.netDeployed,0);
   const totalCurrentValue  = active.reduce((a,r)=>a+(r.sum.currentValue||0),0);
   const totalUnrealizedPnl = active.reduce((a,r)=>a+(r.sum.unrealizedPnl||0),0);
   const totalRealizedPnl   = rows.reduce((a,r)=>a+r.sum.totalRealizedProfit,0);
@@ -639,7 +642,7 @@ function renderPortfolioDashboard() {
       </td>
       <td class="number-col">${sum.remainingQty>0?fmtNum(sum.remainingQty):'<span class="dim">—</span>'}</td>
       <td class="number-col">${sum.totalBuyQty>0?fmtNum(sum.avgBuyPrice):'<span class="dim">—</span>'}</td>
-      <td class="number-col">${fmtNum(sum.remainingInvestment)}</td>
+      <td class="number-col">${fmtNum(sum.netDeployed)}</td>
       <td class="number-col pf-price-cell" onclick="event.stopPropagation()">
         <input type="number" class="rt-price-input" value="${sum.realTimePrice||''}" placeholder="—"
                oninput="updateStockRealTimePrice('${stock.id}',this.value)">
@@ -681,10 +684,13 @@ function renderPortfolioDashboard() {
           <h2 class="pf-title">📊 نمای کلی سبد سهام</h2>
           <span class="pf-account-badge">${escHtml(currentAccountName())}</span>
         </div>
-        <div class="pf-hint">قیمت لحظه‌ای را وارد کنید تا سود/زیان محاسبه شود</div>
+        <div class="pf-header-actions">
+          <div class="pf-hint">قیمت لحظه‌ای را وارد کنید تا سود/زیان محاسبه شود</div>
+          <button class="btn btn-snapshot btn-sm" onclick="savePortfolioSnapshot()">📸 ثبت وضعیت امروز</button>
+        </div>
       </div>
       <div class="pf-agg-grid">
-        <div class="agg-card"><div class="agg-label">💼 سرمایه در گردش (فعال)</div><div class="agg-value">${fmtFull(totalInvested)}</div></div>
+        <div class="agg-card"><div class="agg-label">💼 سرمایه خالص در گردش</div><div class="agg-value">${fmtFull(totalNetDeployed)}</div></div>
         <div class="agg-card agg-card-ic">
           <div class="agg-label">💤 سرمایه غیرفعال (بلااستفاده)</div>
           <div class="ic-input-row" onclick="event.stopPropagation()">
@@ -705,21 +711,21 @@ function renderPortfolioDashboard() {
           <div class="agg-value ${totalRealizedPnl>=0?'pnl-pos':'pnl-neg'}">${totalRealizedPnl!==0?(totalRealizedPnl>=0?'+':'')+fmtFull(totalRealizedPnl):'—'}</div>
         </div>
         <div class="agg-card agg-card-total">
-          <div class="agg-label">🏦 جمع کل دارایی <small style="font-weight:400;opacity:.7">(فعال + غیرفعال + تحقق‌یافته)</small></div>
+          <div class="agg-label">🏦 جمع کل دارایی <small style="font-weight:400;opacity:.7">(بهای‌تمام‌شده + سرمایه آزاد + سود)</small></div>
           <div class="agg-value agg-total-val" id="pf-total-assets">${fmtFull(totalAssets)}</div>
         </div>
       </div>
       <div class="pf-table-wrap"><table class="portfolio-table">
         <thead><tr>
           <th>نماد</th><th class="number-col">مانده (سهم)</th><th class="number-col">میانگین (ریال)</th>
-          <th class="number-col">سرمایه (ریال)</th><th class="number-col">قیمت لحظه‌ای</th>
+          <th class="number-col">سرمایه خالص (ریال)</th><th class="number-col">قیمت لحظه‌ای</th>
           <th class="number-col">ارزش لحظه‌ای (ریال)</th><th class="number-col">سود/زیان لحظه‌ای</th>
           <th class="number-col">سود تحقق‌یافته (ریال)</th>
         </tr></thead>
         <tbody>${activeRowsHtml}${finalizedRowsHtml}</tbody>
         <tfoot><tr class="pf-footer-row">
           <td>جمع کل</td><td></td><td></td>
-          <td class="number-col" id="pf-total-invested">${fmtNum(totalInvested)}</td>
+          <td class="number-col" id="pf-total-invested">${fmtNum(totalNetDeployed)}</td>
           <td></td>
           <td class="number-col" id="pf-total-cv">${hasRealTime?fmtNum(totalCurrentValue):'—'}</td>
           <td class="number-col ${hasRealTime?(totalUnrealizedPnl>=0?'pnl-pos':'pnl-neg'):''}" id="pf-total-pnl">
@@ -1154,6 +1160,45 @@ function updateInactiveCapital(accountId, value) {
   if (icVal) icVal.textContent = fmtFull(ic);
 }
 
+// ─── Portfolio Snapshot ───────────────────────────────────────────────────────
+function savePortfolioSnapshot() {
+  if (!state.currentAccountId) { infoModal('⚠️','ابتدا یک حساب انتخاب کنید'); return; }
+  const account = state.data.accounts.find(a=>a.id===state.currentAccountId);
+  const ic = account ? (parseFloat(account.inactiveCapital)||0) : 0;
+  const stocks = state.data.stocks.filter(s=>s.accountId===state.currentAccountId);
+  const sums   = stocks.map(s=>({stock:s,sum:calculateSummary(s.id)}));
+  const active = sums.filter(r=>!r.stock.finalized);
+  const totalInvested      = active.reduce((a,r)=>a+r.sum.remainingInvestment,0);
+  const totalNetDeployed   = active.reduce((a,r)=>a+r.sum.netDeployed,0);
+  const totalCurrentValue  = active.reduce((a,r)=>a+(r.sum.currentValue||0),0);
+  const totalUnrealizedPnl = active.reduce((a,r)=>a+(r.sum.unrealizedPnl||0),0);
+  const totalRealizedPnl   = sums.reduce((a,r)=>a+r.sum.totalRealizedProfit,0);
+  const hasRealTime        = active.some(r=>r.sum.realTimePrice>0&&r.sum.remainingQty>0);
+  const totalAssets        = totalInvested + ic + totalRealizedPnl;
+  const today              = jalali.todayFormatted();
+  const existIdx           = state.data.snapshots.findIndex(s=>s.accountId===state.currentAccountId&&s.date===today);
+  const snap = {
+    id: existIdx>=0 ? state.data.snapshots[existIdx].id : storage.generateId(),
+    accountId:state.currentAccountId, accountName:account?.name||'',
+    date:today, timestamp:new Date().toISOString(),
+    totalInvested, netDeployed:totalNetDeployed, inactiveCapital:ic,
+    totalCurrentValue: hasRealTime ? totalCurrentValue : 0,
+    unrealizedPnl: hasRealTime ? totalUnrealizedPnl : null,
+    realizedPnl:totalRealizedPnl, totalAssets, hasRealTime
+  };
+  if (existIdx>=0) {
+    showModal('📸 به‌روزرسانی وضعیت',
+      `<span>وضعیت امروز (${today}) قبلاً ذخیره شده. بازنویسی شود؟</span>`,
+      [{label:'بازنویسی',cls:'btn-primary',action:()=>{
+        state.data.snapshots[existIdx]=snap; storage.save(state.data);
+        infoModal('✅ به‌روزرسانی شد',`وضعیت سبد برای ${today} به‌روز شد`);
+      }},{label:'انصراف',cls:'btn-ghost'}]);
+  } else {
+    state.data.snapshots.push(snap); storage.save(state.data);
+    infoModal('✅ ذخیره شد',`وضعیت سبد برای ${today} ذخیره شد`);
+  }
+}
+
 // ─── Backup / Restore ─────────────────────────────────────────────────────────
 function exportBackup() { storage.exportToFile(state.data); }
 function importBackup(event) {
@@ -1204,7 +1249,7 @@ Object.assign(window,{
   addEditTxRow,removeEditTxRow,calcEditRowTotal,
   updateStockRealTimePrice,clearRealTimePrice,updateRightsRealTimePrice,clearRightsRealTimePrice,
   exportBackup,importBackup,hideModal,
-  updateInactiveCapital
+  updateInactiveCapital,savePortfolioSnapshot
 });
 
 document.addEventListener('DOMContentLoaded',init);

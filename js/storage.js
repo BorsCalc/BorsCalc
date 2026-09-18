@@ -4,7 +4,7 @@ const storage = {
   KEY: 'borsCalcData',
 
   empty() {
-    return { version: '1.0', accounts: [], stocks: [], transactions: [] };
+    return { version: '1.0', accounts: [], stocks: [], transactions: [], snapshots: [] };
   },
 
   load() {
@@ -15,6 +15,7 @@ const storage = {
       data.accounts = data.accounts || [];
       data.stocks = data.stocks || [];
       data.transactions = data.transactions || [];
+      data.snapshots = data.snapshots || [];
       return data;
     } catch(e) {
       console.error('Storage load error:', e);
