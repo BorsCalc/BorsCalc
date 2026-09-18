@@ -43,7 +43,8 @@ const storage = {
       exportDate: new Date().toISOString(),
       accounts: data.accounts,
       stocks: data.stocks,
-      transactions: data.transactions
+      transactions: data.transactions,
+      snapshots: data.snapshots || []
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
