@@ -13,18 +13,27 @@
   <!-- ── Header ── -->
   <header class="header">
     <div class="header-brand">
-      <h1>📈 بورس‌کلک</h1>
-      <span class="tagline">ردیاب معاملات بورسی</span>
+      <h1>📈 پرتفوی معاملات بورسی</h1>
+      <span class="tagline">بورس‌کالا|سهام|دارایی‌فیزیکی</span>
+      <div class="account-switcher">
+        <div class="account-avatar-btn">
+          <div class="account-avatar-circle">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 3.6-8 8-8s8 4 8 8"/>
+            </svg>
+          </div>
+          <span class="account-avatar-name" id="accountCurrentName">حساب</span>
+        </div>
+        <div class="account-dropdown-menu">
+          <div class="account-menu-list" id="accountMenuList"></div>
+          <div class="account-menu-footer">
+            <button class="account-new-btn" onclick="createAccount()">＋ حساب جدید</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="header-controls">
-      <div class="account-select-wrapper">
-        <label>حساب:</label>
-        <select id="accountSelect" onchange="switchAccount(this.value)">
-          <option value="">انتخاب حساب...</option>
-        </select>
-      </div>
-      <button class="btn btn-secondary" onclick="createAccount()">＋ حساب جدید</button>
-      <button class="btn btn-secondary" onclick="deleteCurrentAccount()" title="حذف حساب فعلی">🗑</button>
       <a href="capital.html" class="btn btn-secondary" title="مدیریت سرمایه غیرفعال">💰 سرمایه غیرفعال</a>
       <a href="history.html" class="btn btn-secondary" title="تاریخچه و نمودار سبد">📊 تاریخچه</a>
       <button class="btn btn-secondary" onclick="exportBackup()" title="ذخیره فایل پشتیبان">💾 پشتیبان‌گیری</button>

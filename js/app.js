@@ -102,35 +102,54 @@ function createAccount() {
 }
 function switchAccount(id) {
   state.currentAccountId = id||null; state.currentStockId = null;
-  const sel = document.getElementById('accountSelect');
-  if (sel) sel.value = id||'';
+  document.querySelectorAll('.account-menu-item').forEach(el=>{
+    el.classList.toggle('active', el.dataset.id === id);
+  });
+  const acc = id ? state.data.accounts.find(a=>a.id===id) : null;
+  const nameEl = document.getElementById('accountCurrentName');
+  if (nameEl) nameEl.textContent = acc ? acc.name : 'حساب';
   const addBtn = document.getElementById('addStockBtn');
   if (addBtn) addBtn.disabled = !id;
   renderStockList(); showWelcomeScreen();
 }
-function deleteCurrentAccount() {
-  if (!state.currentAccountId) { infoModal('⚠️ خطا','حسابی انتخاب نشده'); return; }
-  const account = state.data.accounts.find(a=>a.id===state.currentAccountId);
-  if (!account) return;
+function deleteAccount(id) {
+  const account = state.data.accounts.find(a=>a.id===id); if (!account) return;
   showModal('حذف حساب',
     `<span>حساب "<strong>${escHtml(account.name)}</strong>" و تمام سهام آن حذف شود؟</span>`,
     [{label:'حذف',cls:'btn-danger',action:()=>{
-      const ids = state.data.stocks.filter(s=>s.accountId===state.currentAccountId).map(s=>s.id);
+      const ids = state.data.stocks.filter(s=>s.accountId===id).map(s=>s.id);
       state.data.transactions = state.data.transactions.filter(t=>!ids.includes(t.stockId));
-      state.data.stocks = state.data.stocks.filter(s=>s.accountId!==state.currentAccountId);
-      state.data.accounts = state.data.accounts.filter(a=>a.id!==state.currentAccountId);
-      storage.save(state.data); state.currentAccountId=null; state.currentStockId=null;
-      renderAccountList(); renderStockList(); showWelcomeScreen();
-      const addBtn=document.getElementById('addStockBtn'); if(addBtn) addBtn.disabled=true;
+      state.data.stocks = state.data.stocks.filter(s=>s.accountId!==id);
+      state.data.accounts = state.data.accounts.filter(a=>a.id!==id);
+      storage.save(state.data);
+      if (state.currentAccountId===id) {
+        state.currentAccountId=null; state.currentStockId=null;
+        const addBtn=document.getElementById('addStockBtn'); if(addBtn) addBtn.disabled=true;
+        renderStockList(); showWelcomeScreen();
+      }
+      renderAccountList();
     }},{label:'انصراف',cls:'btn-ghost'}]);
 }
 function renderAccountList() {
-  const sel = document.getElementById('accountSelect'); if (!sel) return;
-  sel.innerHTML = '<option value="">انتخاب حساب...</option>';
-  state.data.accounts.forEach(a=>{
-    const opt=document.createElement('option'); opt.value=a.id; opt.textContent=a.name; sel.appendChild(opt);
-  });
-  if (state.currentAccountId) sel.value = state.currentAccountId;
+  const list = document.getElementById('accountMenuList'); if (!list) return;
+  list.innerHTML = '';
+  if (state.data.accounts.length === 0) {
+    list.innerHTML = '<div class="account-menu-empty">هنوز حسابی ندارید</div>';
+  } else {
+    state.data.accounts.forEach(a=>{
+      const item = document.createElement('div');
+      item.className = 'account-menu-item' + (a.id===state.currentAccountId ? ' active' : '');
+      item.dataset.id = a.id;
+      item.innerHTML = `<span class="account-menu-name" onclick="switchAccount('${a.id}')">${escHtml(a.name)}</span>`
+        + `<button class="account-menu-delete" onclick="event.stopPropagation();deleteAccount('${a.id}')" title="حذف حساب">🗑</button>`;
+      list.appendChild(item);
+    });
+  }
+  const nameEl = document.getElementById('accountCurrentName');
+  if (nameEl) {
+    const acc = state.data.accounts.find(a=>a.id===state.currentAccountId);
+    nameEl.textContent = acc ? acc.name : 'حساب';
+  }
 }
 function currentAccountName() {
   if (!state.currentAccountId) return '';
@@ -1189,10 +1208,8 @@ function importBackup(event) {
   const file=event.target.files[0]; if (!file) return;
   storage.importFromFile(file)
     .then(data=>{
-      state.data=data; state.currentAccountId=null; state.currentStockId=null;
-      renderAccountList(); renderStockList(); showWelcomeScreen();
-      const addBtn=document.getElementById('addStockBtn'); if (addBtn) addBtn.disabled=true;
-      infoModal('✅ موفق','داده‌ها با موفقیت بازیابی شد');
+      showModal('✅ موفق',`<p style="color:var(--text-secondary);line-height:1.7">داده‌ها با موفقیت بازیابی شد</p>`,
+        [{label:'باشه',cls:'btn-primary',action:()=>location.reload()}]);
     })
     .catch(err=>infoModal('❌ خطا در بازیابی',err.message));
   event.target.value='';
@@ -1223,7 +1240,7 @@ function init() {
 }
 
 Object.assign(window,{
-  init,createAccount,switchAccount,deleteCurrentAccount,
+  init,createAccount,switchAccount,deleteAccount,
   createStock,editStock,selectStock,deleteStock,setStockFilter,finalizeStock,reactivateStock,
   showPortfolio,
   addBonusShares,editBonusShares,deleteBonusShares,sellBonusShares,
