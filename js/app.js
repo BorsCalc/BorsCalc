@@ -428,7 +428,11 @@ function unsellRightShares(stockId) {
 // ─── Calculations ─────────────────────────────────────────────────────────────
 function getStockTransactions(stockId) {
   const all  = state.data.transactions.filter(t=>t.stockId===stockId);
-  const sort = arr=>arr.sort((a,b)=>a.createdAt>b.createdAt?1:-1);
+  const sort = arr=>arr.sort((a,b)=>{
+    if (a.order!=null&&b.order!=null) return a.order-b.order;
+    if (a.order!=null) return -1; if (b.order!=null) return 1;
+    return a.createdAt>b.createdAt?1:-1;
+  });
   return {buys:sort(all.filter(t=>t.type==='buy')),sells:sort(all.filter(t=>t.type==='sell'))};
 }
 function calculateSummary(stockId) {
@@ -635,7 +639,7 @@ function renderPortfolioDashboard() {
   const account  = state.data.accounts.find(a=>a.id===state.currentAccountId);
   const ic       = getAccountCapitalBalance(state.currentAccountId);
   const rows     = stocks.map(s=>({stock:s,sum:calculateSummary(s.id)}));
-  const active   = rows.filter(r=>!r.stock.finalized);
+  const active   = rows.filter(r=>!r.stock.finalized).sort((a,b)=>b.sum.netDeployed-a.sum.netDeployed);
   const finalized= rows.filter(r=>r.stock.finalized);
   const totalInvested      = active.reduce((a,r)=>a+r.sum.remainingInvestment,0);
   const totalNetDeployed   = active.reduce((a,r)=>a+r.sum.netDeployed,0);
@@ -1062,35 +1066,44 @@ function deleteTransaction(txId) {
 // ─── Transaction table ────────────────────────────────────────────────────────
 function renderTransactionTable(transactions, type) {
   if (!transactions.length) return `<p class="empty-state" style="padding:20px">${type==='buy'?'خریدی ثبت نشده':'فروشی ثبت نشده'}</p>`;
-  let html=`<div style="overflow-x:auto"><table class="transaction-table"><thead><tr>
-    <th>تاریخ شمسی</th><th class="number-col">تعداد</th><th class="number-col">قیمت هر سهم (ریال)</th>
-    <th class="number-col">مبلغ کل (ریال)</th><th class="tx-actions-col"></th>
-  </tr></thead><tbody>`;
-  transactions.forEach(tx=>{
-    tx.rows.forEach((row,i)=>{
-      html+=`<tr><td>${i===0?`<div class="tx-date-cell"><span>${escHtml(tx.date)}</span>
-        <button class="tx-edit-btn" onclick="editTransaction('${tx.id}')" title="ویرایش">✏️</button>
-        <button class="tx-delete-btn" onclick="deleteTransaction('${tx.id}')" title="حذف">🗑</button>
-      </div>`:''}</td>
-      <td class="number-col">${fmtNum(row.quantity)}</td>
-      <td class="number-col">${fmtNum(row.price)}</td>
-      <td class="number-col">${fmtNum(row.total)}</td>
-      <td class="tx-actions-col"></td></tr>`;
-    });
-    if (tx.rows.length>1) {
-      html+=`<tr style="background:#F8F8F8;font-style:italic">
-        <td style="font-size:11px;color:#999">↑ جمع این گروه</td>
-        <td class="number-col" style="font-weight:700">${fmtNum(tx.totalQuantity)}</td>
-        <td></td><td class="number-col" style="font-weight:700">${fmtNum(tx.totalAmount)}</td><td></td></tr>`;
-    }
-  });
   const totQty=transactions.reduce((s,t)=>s+t.totalQuantity,0);
   const totAmt=transactions.reduce((s,t)=>s+t.totalAmount,0);
-  html+=`</tbody><tfoot><tr class="${type==='buy'?'buy-total-row':'sell-total-row'}">
-    <td>جمع کل</td><td class="number-col">${fmtNum(totQty)} سهم</td>
-    <td></td><td class="number-col">${fmtNum(totAmt)}</td><td></td>
-  </tr></tfoot></table></div>`;
-  return html;
+  const tbodiesHtml=transactions.map(tx=>{
+    const rowsHtml=tx.rows.map((row,i)=>{
+      const dateCell=i===0?`<div class="tx-date-cell"><span>${escHtml(tx.date)}</span>
+        <button class="tx-edit-btn" onclick="editTransaction('${tx.id}')" title="ویرایش">✏️</button>
+        <button class="tx-delete-btn" onclick="deleteTransaction('${tx.id}')" title="حذف">🗑</button>
+      </div>`:'';
+      const handleCell=i===0?`<td class="tx-handle-col tx-tbl-handle" title="جابجایی">⠿</td>`:`<td class="tx-handle-col"></td>`;
+      return `<tr>${handleCell}<td>${dateCell}</td>
+        <td class="number-col">${fmtNum(row.quantity)}</td>
+        <td class="number-col">${fmtNum(row.price)}</td>
+        <td class="number-col">${fmtNum(row.total)}</td>
+        <td class="tx-actions-col"></td></tr>`;
+    }).join('');
+    const subtotal=tx.rows.length>1?`<tr style="background:#F8F8F8;font-style:italic">
+      <td class="tx-handle-col"></td>
+      <td style="font-size:11px;color:#999">↑ جمع این گروه</td>
+      <td class="number-col" style="font-weight:700">${fmtNum(tx.totalQuantity)}</td>
+      <td></td><td class="number-col" style="font-weight:700">${fmtNum(tx.totalAmount)}</td><td></td></tr>`:'';
+    return `<tbody data-txid="${tx.id}">${rowsHtml}${subtotal}</tbody>`;
+  }).join('');
+  return `<div style="overflow-x:auto">
+    <button id="txReorderBtn_${type}" class="btn btn-ghost btn-sm" onclick="toggleTxReorder('${type}')" style="margin-bottom:6px">↕ جابجایی ردیف‌ها</button>
+    <table class="transaction-table" id="txTable_${type}">
+      <thead><tr>
+        <th class="tx-handle-col"></th>
+        <th>تاریخ شمسی</th><th class="number-col">تعداد</th><th class="number-col">قیمت هر سهم (ریال)</th>
+        <th class="number-col">مبلغ کل (ریال)</th><th class="tx-actions-col"></th>
+      </tr></thead>
+      ${tbodiesHtml}
+      <tfoot><tr class="${type==='buy'?'buy-total-row':'sell-total-row'}">
+        <td class="tx-handle-col"></td>
+        <td>جمع کل</td><td class="number-col">${fmtNum(totQty)} سهم</td>
+        <td></td><td class="number-col">${fmtNum(totAmt)}</td><td></td>
+      </tr></tfoot>
+    </table>
+  </div>`;
 }
 
 // ─── Edit transaction ─────────────────────────────────────────────────────────
@@ -1161,6 +1174,56 @@ function saveEditTransaction(txId) {
     storage.save(state.data);
   }
   hideModal(); renderStockDetail();
+}
+
+// ─── Transaction history table reorder ────────────────────────────────────────
+let _txReorderActive = {};
+
+function _txMoveBtns(type, id, isFirst, isLast) {
+  return `<div class="tx-move-btns">
+    <button class="tx-move-btn" ${isFirst?'disabled':''} onclick="moveTxRow('${type}','${id}',-1)" title="بالا">▲</button>
+    <button class="tx-move-btn" ${isLast?'disabled':''} onclick="moveTxRow('${type}','${id}',1)" title="پایین">▼</button>
+  </div>`;
+}
+
+function moveTxRow(type, txId, dir) {
+  const table=document.getElementById('txTable_'+type); if (!table) return;
+  const tbodies=[...table.querySelectorAll('tbody[data-txid]')];
+  const idx=tbodies.findIndex(tb=>tb.dataset.txid===txId); if (idx===-1) return;
+  const ti=idx+dir;
+  if (ti<0||ti>=tbodies.length) return;
+  if (dir===-1) tbodies[ti].before(tbodies[idx]); else tbodies[ti].after(tbodies[idx]);
+  const updated=[...table.querySelectorAll('tbody[data-txid]')];
+  const last=updated.length-1;
+  updated.forEach((tb,i)=>{
+    const td=tb.querySelector('.tx-tbl-handle');
+    if (td) td.innerHTML=_txMoveBtns(type,tb.dataset.txid,i===0,i===last);
+  });
+}
+
+function toggleTxReorder(type) {
+  const table=document.getElementById('txTable_'+type);
+  const btn=document.getElementById('txReorderBtn_'+type);
+  if (!table||!btn) return;
+  if (_txReorderActive[type]) {
+    const ids=[...table.querySelectorAll('tbody[data-txid]')].map(tb=>tb.dataset.txid);
+    const typed=state.data.transactions.filter(t=>t.stockId===state.currentStockId&&t.type===type);
+    ids.forEach((id,idx)=>{ const tx=typed.find(t=>t.id===id); if(tx) tx.order=idx; });
+    storage.save(state.data);
+    _txReorderActive[type]=false;
+    table.classList.remove('tx-reorder-active');
+    btn.textContent='↕ جابجایی ردیف‌ها'; btn.className='btn btn-ghost btn-sm';
+  } else {
+    _txReorderActive[type]=true;
+    table.classList.add('tx-reorder-active');
+    btn.textContent='✅ ذخیره ترتیب'; btn.className='btn btn-success btn-sm';
+    const tbodies=[...table.querySelectorAll('tbody[data-txid]')];
+    const last=tbodies.length-1;
+    tbodies.forEach((tb,i)=>{
+      const td=tb.querySelector('.tx-tbl-handle');
+      if (td) td.innerHTML=_txMoveBtns(type,tb.dataset.txid,i===0,i===last);
+    });
+  }
 }
 
 // ─── Portfolio Snapshot ───────────────────────────────────────────────────────
@@ -1250,7 +1313,8 @@ Object.assign(window,{
   addEditTxRow,removeEditTxRow,calcEditRowTotal,
   updateStockRealTimePrice,clearRealTimePrice,updateRightsRealTimePrice,clearRightsRealTimePrice,
   exportBackup,importBackup,hideModal,
-  savePortfolioSnapshot
+  savePortfolioSnapshot,
+  toggleTxReorder,moveTxRow
 });
 
 document.addEventListener('DOMContentLoaded',init);

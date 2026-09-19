@@ -1098,6 +1098,27 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
   color: var(--text-secondary); font-size: 13px;
 }
 
+/* ── History 2×2 chart grid ──────────────────────────────────────────────── */
+.hist-chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 2px;
+}
+.hist-chart-panel {
+  background: #FAFCFF;
+  border: 1px solid #E8EEF8;
+  border-radius: var(--radius-sm);
+  padding: 12px 10px 8px;
+}
+.hist-panel-title {
+  font-size: 12px; font-weight: 700;
+  color: var(--text); margin-bottom: 6px;
+}
+@media (max-width: 680px) {
+  .hist-chart-grid { grid-template-columns: 1fr; }
+}
+
 .hist-table-section-header {
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 8px; margin-bottom: 10px;
@@ -1273,3 +1294,17 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
   width: 100%;
 }
 .account-new-btn:hover { background: var(--secondary); color: white; }
+
+/* ── Transaction history table reorder ───────────────────────────────────── */
+.tx-handle-col { display: none; width: 36px; padding: 2px 4px !important; }
+.tx-reorder-active .tx-handle-col { display: table-cell; }
+.tx-tbl-handle { text-align: center; vertical-align: middle; }
+.tx-move-btns { display: flex; flex-direction: column; gap: 2px; align-items: center; padding: 1px 0; }
+.tx-move-btn {
+  background: none; border: 1px solid #BDBDBD; border-radius: 4px;
+  cursor: pointer; font-size: 9px; line-height: 1;
+  padding: 2px 6px; color: #757575; font-family: inherit;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+.tx-move-btn:hover:not(:disabled) { background: var(--primary); color: white; border-color: var(--primary); }
+.tx-move-btn:disabled { opacity: 0.2; cursor: default; }
