@@ -1125,4 +1125,54 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 @media (max-width: 768px) {
   .pf-header-actions { align-items: flex-start; }
   .hist-body { padding: 12px; }
+  .cap-body { padding: 12px; }
 }
+
+/* ── Capital page ─────────────────────────────────────────────────────────── */
+.cap-body { max-width: 960px; margin: 0 auto; padding: 24px 18px; }
+.cap-controls-bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 22px; background: var(--card);
+  padding: 12px 18px; border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.cap-account-wrap { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; }
+.cap-account-wrap select {
+  font-size: 13px; padding: 6px 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--card); color: var(--text); min-width: 180px; font-family: inherit;
+}
+.cap-summary { display: flex; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
+.cap-balance-card {
+  background: var(--card); border: 2px solid var(--border); border-top: 3px solid #546E7A;
+  border-radius: var(--radius); padding: 18px 24px; flex: 1; min-width: 220px; box-shadow: var(--shadow);
+}
+.cap-balance-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600; }
+.cap-balance-value { font-size: 26px; font-weight: 700; color: var(--text); }
+.cap-balance-value.cap-neg { color: var(--sell); }
+.cap-balance-unit { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+.cap-action-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  box-shadow: var(--shadow);
+}
+.cap-table-wrap { overflow-x: auto; border-radius: var(--radius); box-shadow: var(--shadow); }
+.cap-table { width: 100%; border-collapse: collapse; background: var(--card); min-width: 600px; }
+.cap-table thead tr { background: linear-gradient(135deg, #455A64 0%, #546E7A 100%); }
+.cap-table th {
+  padding: 10px 14px; text-align: right;
+  color: white; font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+.cap-table td { padding: 10px 14px; border-bottom: 1px solid #F0F0F0; font-size: 13px; vertical-align: middle; }
+.cap-table tbody tr:last-child td { border-bottom: none; }
+.cap-table tbody tr:hover { background: #F4F8FF; }
+.cap-tx-deposit { color: #2E7D32; font-weight: 700; }
+.cap-tx-withdrawal { color: #C62828; font-weight: 700; }
+.cap-manage-link { display: inline-block; margin-top: 8px; font-size: 11px; color: var(--primary); text-decoration: none; opacity: .8; }
+.cap-manage-link:hover { opacity: 1; text-decoration: underline; }
+.cap-empty-state {
+  text-align: center; padding: 70px 20px;
+  background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+  color: var(--text-secondary);
+}
+.cap-empty-state h3 { font-size: 18px; font-weight: 600; color: var(--primary); margin: 12px 0 8px; }
+.cap-empty-state p { font-size: 13px; }

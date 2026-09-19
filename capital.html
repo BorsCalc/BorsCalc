@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سرمایه غیرفعال | بورس‌کالک</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <header class="header">
+    <div class="header-brand">
+      <h1>📈 بورس‌کالک</h1>
+      <span class="tagline">سرمایه غیرفعال</span>
+    </div>
+    <div class="header-controls">
+      <a href="index.html" class="btn btn-secondary">← بازگشت به سبد</a>
+    </div>
+  </header>
+
+  <div class="cap-body">
+
+    <div class="cap-controls-bar">
+      <div class="cap-account-wrap">
+        <label for="capAccountSelect">حساب:</label>
+        <select id="capAccountSelect" onchange="onAccountChange(this.value)">
+          <option value="">انتخاب حساب...</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="capEmptyAccount" class="cap-empty-state" style="display:none">
+      <div style="font-size:48px;margin-bottom:12px">💤</div>
+      <h3>یک حساب انتخاب کنید</h3>
+      <p>برای مدیریت سرمایه غیرفعال، ابتدا یک حساب از فهرست بالا انتخاب کنید</p>
+    </div>
+
+    <div id="capContent" style="display:none">
+      <div class="cap-summary">
+        <div class="cap-balance-card">
+          <div class="cap-balance-label">💤 موجودی سرمایه غیرفعال</div>
+          <div class="cap-balance-value" id="capBalance">—</div>
+          <div class="cap-balance-unit">ریال</div>
+        </div>
+        <div class="cap-action-card">
+          <button class="btn btn-success" onclick="showAddModal('deposit')">➕ واریز</button>
+          <button class="btn btn-danger" onclick="showAddModal('withdrawal')">➖ برداشت</button>
+        </div>
+      </div>
+
+      <div id="capEmptyTx" class="cap-empty-state" style="display:none">
+        <div style="font-size:48px;margin-bottom:12px">📋</div>
+        <h3>هنوز تراکنشی ثبت نشده</h3>
+        <p>برای ثبت موجودی اولیه، دکمه «واریز» را بزنید</p>
+      </div>
+
+      <div class="cap-table-wrap" id="capTableWrap" style="display:none">
+        <table class="cap-table" id="capTable"></table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="modalOverlay" class="modal-overlay" style="display:none"
+     onclick="if(event.target===this)hideModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="modalTitle"></h3>
+    <div id="modalBody" style="margin-bottom:16px"></div>
+    <div class="modal-footer" id="modalFooter">
+      <button class="btn btn-ghost" onclick="hideModal()">بستن</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/jalali.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/capital.js"></script>
+</body>
+</html>

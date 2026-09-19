@@ -16,6 +16,13 @@ const storage = {
       data.stocks = data.stocks || [];
       data.transactions = data.transactions || [];
       data.snapshots = data.snapshots || [];
+      data.accounts.forEach(a=>{
+        if (!Array.isArray(a.capitalTransactions)) {
+          a.capitalTransactions = [];
+          const legacy = parseFloat(a.inactiveCapital)||0;
+          if (legacy>0) a.capitalTransactions.push({id:'init_'+a.id,date:'',type:'deposit',amount:legacy,description:'موجودی اولیه'});
+        }
+      });
       return data;
     } catch(e) {
       console.error('Storage load error:', e);

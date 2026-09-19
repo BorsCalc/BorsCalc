@@ -500,6 +500,13 @@ function clearRightsRealTimePrice(stockId) {
   stock.rightShares.realTimePrice=null; storage.save(state.data); renderStockDetail();
 }
 
+// ─── Inactive Capital balance ─────────────────────────────────────────────────
+function getAccountCapitalBalance(accountId) {
+  const account = state.data.accounts.find(a=>a.id===accountId);
+  if (!account) return 0;
+  return (account.capitalTransactions||[]).reduce((s,t)=>t.type==='deposit'?s+t.amount:s-t.amount, 0);
+}
+
 // ─── Targeted DOM updates ─────────────────────────────────────────────────────
 function updateDetailPnlSection(sum) {
   const el = document.getElementById('detail-rt-pnl'); if (!el) return;
@@ -588,9 +595,8 @@ function updatePortfolioTotals() {
     pnlCard.className=`agg-card ${totalUnrealizedPnl>=0?'agg-profit':'agg-loss'}`;
     set('pf-agg-pnl',`${totalUnrealizedPnl>=0?'+':''}${fmtFull(totalUnrealizedPnl)}`);
   }
-  const account = state.data.accounts.find(a=>a.id===state.currentAccountId);
-  const ic = account ? (parseFloat(account.inactiveCapital)||0) : 0;
-  set('pf-agg-ic-val', fmtFull(ic));
+  const ic = getAccountCapitalBalance(state.currentAccountId);
+  set('pf-agg-ic-val', ic>0?fmtFull(ic):'—');
   set('pf-total-assets', fmtFull(totalInvested + ic + totalRealizedPnl));
 }
 
@@ -608,7 +614,7 @@ function renderPortfolioDashboard() {
     detail.innerHTML=`<div class="welcome-screen"><div class="welcome-icon">📊</div><h2>سبد خالی است</h2><p>از دکمه ＋ سهام جدید اضافه کنید</p></div>`; return;
   }
   const account  = state.data.accounts.find(a=>a.id===state.currentAccountId);
-  const ic       = account ? (parseFloat(account.inactiveCapital)||0) : 0;
+  const ic       = getAccountCapitalBalance(state.currentAccountId);
   const rows     = stocks.map(s=>({stock:s,sum:calculateSummary(s.id)}));
   const active   = rows.filter(r=>!r.stock.finalized);
   const finalized= rows.filter(r=>r.stock.finalized);
@@ -692,13 +698,9 @@ function renderPortfolioDashboard() {
       <div class="pf-agg-grid">
         <div class="agg-card"><div class="agg-label">💼 سرمایه خالص در گردش</div><div class="agg-value">${fmtFull(totalNetDeployed)}</div></div>
         <div class="agg-card agg-card-ic">
-          <div class="agg-label">💤 سرمایه غیرفعال (بلااستفاده)</div>
-          <div class="ic-input-row" onclick="event.stopPropagation()">
-            <input type="number" id="pf-ic-input" class="ic-amount-input" value="${ic||''}" placeholder="۰"
-                   oninput="updateInactiveCapital('${state.currentAccountId}',this.value)">
-            <span class="ic-unit">ریال</span>
-          </div>
-          <div class="agg-value" id="pf-agg-ic-val" style="font-size:12px;margin-top:4px">${ic>0?fmtFull(ic):'—'}</div>
+          <div class="agg-label">💤 سرمایه غیرفعال</div>
+          <div class="agg-value" id="pf-agg-ic-val">${ic>0?fmtFull(ic):'—'}</div>
+          <a href="capital.html" class="cap-manage-link">⚙ مدیریت واریز/برداشت</a>
         </div>
         <div class="agg-card" id="pf-agg-cv-card" style="${hasRealTime?'':'display:none'}">
           <div class="agg-label">📈 ارزش لحظه‌ای کل</div><div class="agg-value" id="pf-agg-cv">${fmtFull(totalCurrentValue)}</div>
@@ -1142,29 +1144,11 @@ function saveEditTransaction(txId) {
   hideModal(); renderStockDetail();
 }
 
-// ─── Inactive Capital ─────────────────────────────────────────────────────────
-function updateInactiveCapital(accountId, value) {
-  const account = state.data.accounts.find(a=>a.id===accountId); if (!account) return;
-  account.inactiveCapital = parseFloat(value)||0;
-  storage.save(state.data);
-  // update total-assets card without full re-render
-  const ic = account.inactiveCapital;
-  const stocks = state.data.stocks.filter(s=>s.accountId===accountId);
-  const active = stocks.filter(s=>!s.finalized);
-  const totalInvested = active.reduce((acc,s)=>acc+calculateSummary(s.id).remainingInvestment,0);
-  const totalRpnl = stocks.reduce((acc,s)=>acc+calculateSummary(s.id).totalRealizedProfit,0);
-  const totalAssets = totalInvested + ic + totalRpnl;
-  const el = document.getElementById('pf-total-assets');
-  if (el) el.textContent = fmtFull(totalAssets);
-  const icVal = document.getElementById('pf-agg-ic-val');
-  if (icVal) icVal.textContent = fmtFull(ic);
-}
-
 // ─── Portfolio Snapshot ───────────────────────────────────────────────────────
 function savePortfolioSnapshot() {
   if (!state.currentAccountId) { infoModal('⚠️','ابتدا یک حساب انتخاب کنید'); return; }
   const account = state.data.accounts.find(a=>a.id===state.currentAccountId);
-  const ic = account ? (parseFloat(account.inactiveCapital)||0) : 0;
+  const ic = getAccountCapitalBalance(state.currentAccountId);
   const stocks = state.data.stocks.filter(s=>s.accountId===state.currentAccountId);
   const sums   = stocks.map(s=>({stock:s,sum:calculateSummary(s.id)}));
   const active = sums.filter(r=>!r.stock.finalized);
@@ -1249,7 +1233,7 @@ Object.assign(window,{
   addEditTxRow,removeEditTxRow,calcEditRowTotal,
   updateStockRealTimePrice,clearRealTimePrice,updateRightsRealTimePrice,clearRightsRealTimePrice,
   exportBackup,importBackup,hideModal,
-  updateInactiveCapital,savePortfolioSnapshot
+  savePortfolioSnapshot
 });
 
 document.addEventListener('DOMContentLoaded',init);
