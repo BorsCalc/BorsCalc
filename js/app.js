@@ -63,26 +63,26 @@ function _bonusModalHtml(ex) {
   return `
     <div class="modal-form-group">
       <label class="modal-form-label">تعداد سهام جایزه <span class="modal-required">*</span></label>
-      <input type="number" id="fm_bonusQty" value="${ex?.quantity||''}" min="1" placeholder="تعداد" style="width:160px">
+      <input type="text" inputmode="numeric" id="fm_bonusQty" value="${ex?.quantity?numFmtVal(ex.quantity):''}" placeholder="تعداد" style="width:160px" oninput="numFmt(this)">
     </div>
     <div class="modal-form-group">
       <label class="modal-form-label">مبلغ اولیه <small class="modal-optional">(اختیاری — خالی = صفر)</small></label>
-      <input type="number" id="fm_bonusAmount" value="${ex?.initialAmount!=null?ex.initialAmount:''}" min="0" placeholder="ریال" style="width:180px">
+      <input type="text" inputmode="numeric" id="fm_bonusAmount" value="${ex?.initialAmount!=null?numFmtVal(ex.initialAmount):''}" placeholder="ریال" style="width:180px" oninput="numFmt(this)">
     </div>`;
 }
 function _rightsModalHtml(ex) {
   return `
     <div class="modal-form-group">
       <label class="modal-form-label">تعداد حق تقدم <span class="modal-required">*</span></label>
-      <input type="number" id="fm_rightsQty" value="${ex?.quantity||''}" min="1" placeholder="تعداد" style="width:160px">
+      <input type="text" inputmode="numeric" id="fm_rightsQty" value="${ex?.quantity?numFmtVal(ex.quantity):''}" placeholder="تعداد" style="width:160px" oninput="numFmt(this)">
     </div>
     <div class="modal-form-group">
       <label class="modal-form-label">قیمت اولیه (ریال) <span class="modal-required">*</span></label>
-      <input type="number" id="fm_rightsPrice" value="${ex?.initialPrice||''}" min="0" placeholder="ریال" style="width:180px">
+      <input type="text" inputmode="numeric" id="fm_rightsPrice" value="${ex?.initialPrice?numFmtVal(ex.initialPrice):''}" placeholder="ریال" style="width:180px" oninput="numFmt(this)">
     </div>
     <div class="modal-form-group">
       <label class="modal-form-label">مبلغ اولیه <small class="modal-optional">(اختیاری — خالی = qty × price)</small></label>
-      <input type="number" id="fm_rightsAmount" value="${ex?.initialAmount!=null?ex.initialAmount:''}" min="0" placeholder="ریال" style="width:180px">
+      <input type="text" inputmode="numeric" id="fm_rightsAmount" value="${ex?.initialAmount!=null?numFmtVal(ex.initialAmount):''}" placeholder="ریال" style="width:180px" oninput="numFmt(this)">
     </div>`;
 }
 
@@ -300,10 +300,10 @@ function renderStockList() {
 function addBonusShares(stockId) {
   const stock = state.data.stocks.find(s=>s.id===stockId); if (!stock) return;
   formModal('🎁 افزودن سهام جایزه', _bonusModalHtml(null), 'افزودن', ()=>{
-    const qty = parseInt(document.getElementById('fm_bonusQty')?.value);
+    const qty = Math.round(numParse(document.getElementById('fm_bonusQty')?.value));
     if (!qty||qty<=0) { flagInput('fm_bonusQty'); return; }
     const el = document.getElementById('fm_bonusAmount');
-    const amt = (el&&el.value!=='') ? (parseFloat(el.value)||0) : null;
+    const amt = (el&&el.value!=='') ? (numParse(el.value)||0) : null;
     stock.bonusShares = {enabled:true,quantity:qty,initialAmount:amt};
     storage.save(state.data); hideModal(); renderStockList(); renderStockDetail();
   });
@@ -312,10 +312,10 @@ function addBonusShares(stockId) {
 function editBonusShares(stockId) {
   const stock = state.data.stocks.find(s=>s.id===stockId); if (!stock) return;
   formModal('✏️ ویرایش سهام جایزه', _bonusModalHtml(stock.bonusShares), 'ذخیره', ()=>{
-    const qty = parseInt(document.getElementById('fm_bonusQty')?.value);
+    const qty = Math.round(numParse(document.getElementById('fm_bonusQty')?.value));
     if (!qty||qty<=0) { flagInput('fm_bonusQty'); return; }
     const el = document.getElementById('fm_bonusAmount');
-    const amt = (el&&el.value!=='') ? (parseFloat(el.value)||0) : null;
+    const amt = (el&&el.value!=='') ? (numParse(el.value)||0) : null;
     stock.bonusShares = {enabled:true,quantity:qty,initialAmount:amt};
     storage.save(state.data); hideModal(); renderStockDetail();
   });
@@ -334,19 +334,19 @@ function sellBonusShares(stockId) {
   state.currentTab = 'sell'; renderStockDetail();
   setTimeout(()=>{
     const el = document.getElementById('qty_1');
-    if (el) { el.value=qty; calcRowTotal(1); }
+    if (el) { el.value=numFmtVal(qty); calcRowTotal(1); }
     document.getElementById('transactionFormContainer')?.scrollIntoView({behavior:'smooth',block:'nearest'});
   },80);
 }
 function addRightShares(stockId) {
   const stock = state.data.stocks.find(s=>s.id===stockId); if (!stock) return;
   formModal('📜 افزودن حق تقدم', _rightsModalHtml(null), 'افزودن', ()=>{
-    const qty   = parseInt(document.getElementById('fm_rightsQty')?.value);
-    const price = parseFloat(document.getElementById('fm_rightsPrice')?.value);
+    const qty   = Math.round(numParse(document.getElementById('fm_rightsQty')?.value));
+    const price = numParse(document.getElementById('fm_rightsPrice')?.value);
     if (!qty||qty<=0) { flagInput('fm_rightsQty'); return; }
     if (isNaN(price)||price<0) { flagInput('fm_rightsPrice'); return; }
     const el = document.getElementById('fm_rightsAmount');
-    const amt = (el&&el.value!=='') ? (parseFloat(el.value)||0) : null;
+    const amt = (el&&el.value!=='') ? (numParse(el.value)||0) : null;
     const prev = stock.rightShares||{};
     stock.rightShares = {enabled:true,quantity:qty,initialPrice:price,initialAmount:amt,
       realTimePrice:prev.realTimePrice||null,sold:false,salePrice:null,saleAmount:null};
@@ -361,21 +361,21 @@ function editRightShares(stockId) {
   if (ex?.sold) {
     extraHtml = `<div class="modal-form-group">
       <label class="modal-form-label">قیمت فروش (ریال/سهم)</label>
-      <input type="number" id="fm_rightsSalePrice" value="${ex.salePrice||''}" min="0" style="width:180px">
+      <input type="text" inputmode="numeric" id="fm_rightsSalePrice" value="${ex.salePrice?numFmtVal(ex.salePrice):''}" style="width:180px" oninput="numFmt(this)">
     </div>`;
   }
   formModal('✏️ ویرایش حق تقدم', _rightsModalHtml(ex)+extraHtml, 'ذخیره', ()=>{
-    const qty   = parseInt(document.getElementById('fm_rightsQty')?.value);
-    const price = parseFloat(document.getElementById('fm_rightsPrice')?.value);
+    const qty   = Math.round(numParse(document.getElementById('fm_rightsQty')?.value));
+    const price = numParse(document.getElementById('fm_rightsPrice')?.value);
     if (!qty||qty<=0) { flagInput('fm_rightsQty'); return; }
     if (isNaN(price)||price<0) { flagInput('fm_rightsPrice'); return; }
     const el = document.getElementById('fm_rightsAmount');
-    const amt = (el&&el.value!=='') ? (parseFloat(el.value)||0) : null;
+    const amt = (el&&el.value!=='') ? (numParse(el.value)||0) : null;
     const prev = stock.rightShares;
     let newSalePrice = prev?.salePrice||null, newSaleAmount = prev?.saleAmount||null;
     const saleEl = document.getElementById('fm_rightsSalePrice');
     if (saleEl && prev?.sold) {
-      newSalePrice = parseFloat(saleEl.value)||0;
+      newSalePrice = numParse(saleEl.value)||0;
       newSaleAmount = qty * newSalePrice;
     }
     stock.rightShares = {enabled:true,quantity:qty,initialPrice:price,initialAmount:amt,
@@ -400,11 +400,11 @@ function sellRightShares(stockId) {
   formModal('💰 فروش حق تقدم',
     `<div class="modal-form-group">
        <label class="modal-form-label">قیمت فروش هر حق تقدم (ریال) <span class="modal-required">*</span></label>
-       <input type="number" id="fm_rightsSalePrice" value="${r.realTimePrice||''}" min="0" placeholder="ریال" style="width:180px">
+       <input type="text" inputmode="numeric" id="fm_rightsSalePrice" value="${r.realTimePrice?numFmtVal(r.realTimePrice):''}" placeholder="ریال" style="width:180px" oninput="numFmt(this)">
      </div>
      <div style="font-size:12px;color:#777;margin-top:4px">تعداد: ${fmtNum(r.quantity)} سهم</div>`,
     'ثبت فروش', ()=>{
-      const price = parseFloat(document.getElementById('fm_rightsSalePrice')?.value);
+      const price = numParse(document.getElementById('fm_rightsSalePrice')?.value);
       if (!price||price<=0) { flagInput('fm_rightsSalePrice'); return; }
       stock.rightShares.sold = true;
       stock.rightShares.salePrice  = price;
@@ -497,7 +497,7 @@ function calculateSummary(stockId) {
 
 // ─── Real-Time Price ──────────────────────────────────────────────────────────
 function updateStockRealTimePrice(stockId, value) {
-  const price = parseFloat(value)||0;
+  const price = numParse(value)||0;
   const stock = state.data.stocks.find(s=>s.id===stockId); if (!stock) return;
   stock.realTimePrice = price>0 ? price : null;
   storage.save(state.data);
@@ -510,7 +510,7 @@ function clearRealTimePrice(stockId) {
   stock.realTimePrice=null; storage.save(state.data); renderStockDetail();
 }
 function updateRightsRealTimePrice(stockId, value) {
-  const price = parseFloat(value)||0;
+  const price = numParse(value)||0;
   const stock = state.data.stocks.find(s=>s.id===stockId); if (!stock?.rightShares) return;
   stock.rightShares.realTimePrice = price>0 ? price : null;
   storage.save(state.data);
@@ -660,8 +660,8 @@ function renderPortfolioDashboard() {
     const rightsRtInput = (stock.rightShares?.enabled && !stock.rightShares?.sold) ? `
       <div style="margin-top:5px;padding-top:5px;border-top:1px dashed #DDD">
         <div style="font-size:10px;color:#4527A0;font-weight:700;margin-bottom:2px">${escHtml(stock.symbol)}ح:</div>
-        <input type="number" class="rt-price-input rights-rt-input" value="${stock.rightShares.realTimePrice||''}" placeholder="—"
-               oninput="updateRightsRealTimePrice('${stock.id}',this.value)">
+        <input type="text" inputmode="numeric" class="rt-price-input rights-rt-input" value="${stock.rightShares.realTimePrice?numFmtVal(stock.rightShares.realTimePrice):''}" placeholder="—"
+               oninput="numFmt(this);updateRightsRealTimePrice('${stock.id}',this.value)">
       </div>` : (stock.rightShares?.sold ? `<div style="font-size:10px;color:#4527A0;margin-top:4px">ح: ✅ فروخته</div>` : '');
     return `<tr>
       <td onclick="selectStock('${stock.id}')" style="cursor:pointer">
@@ -673,8 +673,8 @@ function renderPortfolioDashboard() {
       <td class="number-col">${sum.totalBuyQty>0?fmtNum(sum.avgBuyPrice):'<span class="dim">—</span>'}</td>
       <td class="number-col">${fmtNum(sum.netDeployed)}</td>
       <td class="number-col pf-price-cell" onclick="event.stopPropagation()">
-        <input type="number" class="rt-price-input" value="${sum.realTimePrice||''}" placeholder="—"
-               oninput="updateStockRealTimePrice('${stock.id}',this.value)">
+        <input type="text" inputmode="numeric" class="rt-price-input" value="${sum.realTimePrice?numFmtVal(sum.realTimePrice):''}" placeholder="—"
+               oninput="numFmt(this);updateStockRealTimePrice('${stock.id}',this.value)">
         ${rightsRtInput}
       </td>
       <td class="number-col" id="pf-cv-${stock.id}">${sum.currentValue>0?fmtNum(sum.currentValue):'<span class="dim">—</span>'}</td>
@@ -835,8 +835,8 @@ function renderRightsSection(stock, sum) {
         <div class="rights-rt-block">
           <span class="rights-rt-badge">لحظه‌ای ح</span>
           <label class="rt-label">قیمت جاری ${escHtml(stock.symbol)}ح:</label>
-          <input type="number" id="rtRightsInput" value="${r.realTimePrice||''}" placeholder="ریال"
-                 oninput="updateRightsRealTimePrice('${stock.id}',this.value)">
+          <input type="text" inputmode="numeric" id="rtRightsInput" value="${r.realTimePrice?numFmtVal(r.realTimePrice):''}" placeholder="ریال"
+                 oninput="numFmt(this);updateRightsRealTimePrice('${stock.id}',this.value)">
           <span class="rt-unit">ریال</span>
           ${r.realTimePrice?`<button class="rt-clear-btn" onclick="clearRightsRealTimePrice('${stock.id}')">× پاک</button>`:''}
         </div>
@@ -935,8 +935,8 @@ function renderStockDetail() {
       <div class="realtime-input-row">
         <span class="rt-badge">لحظه‌ای</span>
         <label class="rt-label">💹 قیمت جاری سهم:</label>
-        <input type="number" id="rtPriceInput" value="${sum.realTimePrice||''}" placeholder="قیمت فعلی (ریال)"
-               oninput="updateStockRealTimePrice('${stock.id}',this.value)">
+        <input type="text" inputmode="numeric" id="rtPriceInput" value="${sum.realTimePrice?numFmtVal(sum.realTimePrice):''}" placeholder="قیمت فعلی (ریال)"
+               oninput="numFmt(this);updateStockRealTimePrice('${stock.id}',this.value)">
         <span class="rt-unit">ریال</span>
         ${sum.realTimePrice?`<button class="rt-clear-btn" onclick="clearRealTimePrice('${stock.id}')">× پاک</button>`:''}
       </div>
@@ -993,9 +993,9 @@ function makeRowHtml(idx,qty,price) {
   const tot=(qty>0&&price>0)?qty*price:0;
   return `<div class="transaction-row" id="txRow_${idx}" data-idx="${idx}">
     <span class="row-num">${idx}</span>
-    <input type="number" placeholder="تعداد" id="qty_${idx}" value="${qty||''}" oninput="calcRowTotal(${idx})" min="1" style="width:110px">
+    <input type="text" inputmode="numeric" placeholder="تعداد" id="qty_${idx}" value="${qty?numFmtVal(qty):''}" oninput="numFmt(this);calcRowTotal(${idx})" style="width:110px">
     <span class="row-label">سهم ×</span>
-    <input type="number" placeholder="قیمت (ریال)" id="price_${idx}" value="${price||''}" oninput="calcRowTotal(${idx})" min="0" style="width:145px">
+    <input type="text" inputmode="numeric" placeholder="قیمت (ریال)" id="price_${idx}" value="${price?numFmtVal(price):''}" oninput="numFmt(this);calcRowTotal(${idx})" style="width:145px">
     <span class="equals">=</span>
     <span class="row-total ${tot>0?'has-value':''}" id="total_${idx}">${tot>0?fmtRialShort(tot):'—'}</span>
     ${idx>1?`<button style="color:var(--sell);background:none;border:none;cursor:pointer;font-size:20px;line-height:1;padding:0 4px" onclick="removeTransactionRow(${idx})">×</button>`:''}
@@ -1009,8 +1009,8 @@ function addTransactionRow() {
 }
 function removeTransactionRow(idx) { document.getElementById('txRow_'+idx)?.remove(); }
 function calcRowTotal(idx) {
-  const qty=parseFloat(document.getElementById('qty_'+idx)?.value)||0;
-  const price=parseFloat(document.getElementById('price_'+idx)?.value)||0;
+  const qty=numParse(document.getElementById('qty_'+idx)?.value)||0;
+  const price=numParse(document.getElementById('price_'+idx)?.value)||0;
   const el=document.getElementById('total_'+idx); if (!el) return;
   if (qty>0&&price>0) { el.textContent=fmtRialShort(qty*price); el.classList.add('has-value'); }
   else { el.textContent='—'; el.classList.remove('has-value'); }
@@ -1028,8 +1028,8 @@ function submitTransaction() {
   const rows=[]; let allValid=true;
   rowEls.forEach(rowEl=>{
     const idx=rowEl.dataset.idx;
-    const qty=parseFloat(document.getElementById('qty_'+idx)?.value);
-    const price=parseFloat(document.getElementById('price_'+idx)?.value);
+    const qty=numParse(document.getElementById('qty_'+idx)?.value);
+    const price=numParse(document.getElementById('price_'+idx)?.value);
     if (isNaN(qty)||qty<=0||isNaN(price)||price<=0) allValid=false;
     else rows.push({quantity:qty,price,total:qty*price});
   });
@@ -1111,17 +1111,17 @@ function makeEditRowHtml(idx,qty,price) {
   const tot=(qty>0&&price>0)?qty*price:0;
   return `<div class="transaction-row edit-tx-row" id="etxrow_${idx}" data-idx="${idx}">
     <span class="row-num">${idx}</span>
-    <input type="number" placeholder="تعداد" id="eqty_${idx}" value="${qty||''}" oninput="calcEditRowTotal(${idx})" min="1" style="width:110px">
+    <input type="text" inputmode="numeric" placeholder="تعداد" id="eqty_${idx}" value="${qty?numFmtVal(qty):''}" oninput="numFmt(this);calcEditRowTotal(${idx})" style="width:110px">
     <span class="row-label">سهم ×</span>
-    <input type="number" placeholder="قیمت (ریال)" id="eprice_${idx}" value="${price||''}" oninput="calcEditRowTotal(${idx})" min="0" style="width:145px">
+    <input type="text" inputmode="numeric" placeholder="قیمت (ریال)" id="eprice_${idx}" value="${price?numFmtVal(price):''}" oninput="numFmt(this);calcEditRowTotal(${idx})" style="width:145px">
     <span class="equals">=</span>
     <span class="row-total ${tot>0?'has-value':''}" id="etotal_${idx}">${tot>0?fmtRialShort(tot):'—'}</span>
     ${idx>1?`<button style="color:var(--sell);background:none;border:none;cursor:pointer;font-size:20px;line-height:1;padding:0 4px" onclick="removeEditTxRow(${idx})">×</button>`:''}
   </div>`;
 }
 function calcEditRowTotal(idx) {
-  const qty=parseFloat(document.getElementById('eqty_'+idx)?.value)||0;
-  const price=parseFloat(document.getElementById('eprice_'+idx)?.value)||0;
+  const qty=numParse(document.getElementById('eqty_'+idx)?.value)||0;
+  const price=numParse(document.getElementById('eprice_'+idx)?.value)||0;
   const el=document.getElementById('etotal_'+idx); if (!el) return;
   if (qty>0&&price>0) { el.textContent=fmtRialShort(qty*price); el.classList.add('has-value'); }
   else { el.textContent='—'; el.classList.remove('has-value'); }
@@ -1160,8 +1160,8 @@ function saveEditTransaction(txId) {
   const rows=[]; let allValid=true;
   rowEls.forEach(rowEl=>{
     const idx=rowEl.dataset.idx;
-    const qty=parseFloat(document.getElementById('eqty_'+idx)?.value);
-    const price=parseFloat(document.getElementById('eprice_'+idx)?.value);
+    const qty=numParse(document.getElementById('eqty_'+idx)?.value);
+    const price=numParse(document.getElementById('eprice_'+idx)?.value);
     if (isNaN(qty)||qty<=0||isNaN(price)||price<=0) allValid=false;
     else rows.push({quantity:qty,price,total:qty*price});
   });

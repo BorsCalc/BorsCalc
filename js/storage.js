@@ -86,3 +86,33 @@ const storage = {
 };
 
 window.storage = storage;
+
+function numFmt(el) {
+  const sel = el.selectionStart;
+  const oldVal = el.value;
+  const rawBefore = oldVal.slice(0, sel).replace(/[^0-9]/g, '').length;
+  const raw = oldVal.replace(/[^0-9]/g, '');
+  if (!raw) { el.value = ''; return; }
+  const newVal = parseInt(raw, 10).toLocaleString('en-US');
+  el.value = newVal;
+  let newSel = rawBefore === 0 ? 0 : newVal.length, digits = 0;
+  if (rawBefore > 0) {
+    for (let i = 0; i < newVal.length; i++) {
+      if (/[0-9]/.test(newVal[i])) digits++;
+      if (digits === rawBefore) { newSel = i + 1; break; }
+    }
+  }
+  try { el.setSelectionRange(newSel, newSel); } catch(e) {}
+}
+function numParse(val) {
+  if (val == null || val === '') return NaN;
+  return parseFloat(String(val).replace(/,/g, ''));
+}
+function numFmtVal(n) {
+  if (n == null || n === '') return '';
+  const num = parseFloat(String(n).replace(/,/g, ''));
+  return isNaN(num) ? '' : Math.round(num).toLocaleString('en-US');
+}
+window.numFmt = numFmt;
+window.numParse = numParse;
+window.numFmtVal = numFmtVal;

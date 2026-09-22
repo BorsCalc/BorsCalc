@@ -137,7 +137,7 @@ function showAddModal(type) {
     </div>
     <div class="modal-form-group">
       <label>مبلغ (ریال):</label>
-      <input type="number" id="capTxAmount" placeholder="۰" min="1" style="width:100%;margin-top:6px">
+      <input type="text" inputmode="numeric" id="capTxAmount" placeholder="۰" style="width:100%;margin-top:6px" oninput="numFmt(this)">
     </div>
     <div class="modal-form-group">
       <label>شرح <span style="color:var(--sell)">*</span>:</label>
@@ -162,7 +162,7 @@ function saveTransaction(type) {
   const amountEl = document.getElementById('capTxAmount');
   const descEl   = document.getElementById('capTxDesc');
   const date        = dateEl?.value.trim();
-  const amount      = parseFloat(amountEl?.value);
+  const amount      = numParse(amountEl?.value);
   const description = descEl?.value.trim();
   let valid = true;
   if (!jalali.isValid(date))      { dateEl?.classList.add('input-error');   dateEl?.addEventListener('input',()=>dateEl.classList.remove('input-error'),{once:true});   valid=false; }
